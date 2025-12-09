@@ -1,10 +1,8 @@
 import fastapi_app.django_setup
-
 from fastapi import APIRouter, HTTPException
 from creator_app.models import User, CollaboratorProfile
 
 router = APIRouter(prefix="/collaborator", tags=["Collaborator"])
-
 
 # ------------------------------
 # Create / Update Collaborator Profile

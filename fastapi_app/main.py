@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi_app.routes.auth import router as auth_router
 from fastapi_app.routes.creator import router as creator_router
-from fastapi_app.routes.collaborator import router as collaborator_router
+from fastapi_app.routes.collaborator import router as collaborator_router 
+from fastapi_app.routes.my_profile import router as my_profile_router 
 
 app = FastAPI()
 
@@ -20,6 +21,9 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(creator_router)
 app.include_router(collaborator_router) 
+app.include_router(my_profile_router)
+
+
 
 
 @app.get("/")

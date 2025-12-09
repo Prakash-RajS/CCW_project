@@ -3,42 +3,13 @@ from django.contrib.auth.hashers import make_password, check_password
 
 
 # ============================================================
-# USER MODEL
-# ============================================================
-
-class User(models.Model):
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=15, unique=True)
-    password = models.CharField(max_length=255)
-
-    # Role → "creator" or "collaborator"
-    role = models.CharField(max_length=50, blank=True, null=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    # Hash password
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-        self.save()
-
-    # Verify password
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
-
-    def __str__(self):
-        return self.email
-
-
-# ============================================================
 # CREATOR PROFILE MODEL
 # ============================================================
 
 class CreatorProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField("creator_app.UserData", on_delete=models.CASCADE)
 
     creator_name = models.CharField(max_length=255)
-
     creator_type = models.CharField(max_length=255)
     experience_level = models.CharField(max_length=100)
 
@@ -68,7 +39,7 @@ class CreatorProfile(models.Model):
 # ============================================================
 
 class CollaboratorProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField("creator_app.UserData", on_delete=models.CASCADE)
 
     name = models.CharField(max_length=255)
     language = models.CharField(max_length=100)
@@ -99,42 +70,43 @@ class CollaboratorProfile(models.Model):
 
 
 # ============================================================
-# SOCIAL LOGIN USER MODEL (Auth0 / Google / Facebook)
+# ONLY USER TABLE (Auth0 / Google / Facebook / Signup)
 # ============================================================
 
 class UserData(models.Model):
     id = models.AutoField(primary_key=True)
 
-    # social login email (Google, Facebook)
     email = models.EmailField(unique=True, blank=True, null=True)
-    role = models.CharField(max_length=50, blank=True, null=True)
+
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
 
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     location = models.CharField(max_length=50, blank=True, null=True)
 
-    provider = models.CharField(max_length=50, blank=True, null=True)  # google / facebook / auth0
+    provider = models.CharField(max_length=50, blank=True, null=True)
 
-    password = models.CharField(max_length=255, blank=True, null=True)  # social login hash
+    password = models.CharField(max_length=255, blank=True, null=True)
 
     profile_pic = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
-    # Social login ID like: google-oauth2|12938129381293
+    role = models.CharField(max_length=50, blank=True, null=True)
+
     userid = models.CharField(max_length=255, unique=True, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    address = models.CharField(max_length=255,blank = True, null = True)
+    city = models.CharField(max_length=255,blank = True, null = True)
+    state = models.CharField(max_length=255,blank = True, null = True)
+
     def set_password(self, raw_password):
         self.password = make_password(raw_password)
         self.save()
 
-    # Verify password
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
-
-    
 
     def __str__(self):
         return f"{self.email} ({self.provider})"
