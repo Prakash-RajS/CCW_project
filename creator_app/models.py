@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.utils import timezone  # make sure this import exists at the top
+
 
 
 # ============================================================
@@ -70,7 +72,7 @@ class CollaboratorProfile(models.Model):
 
 
 # ============================================================
-# ONLY USER TABLE (Auth0 / Google / Facebook / Signup)
+# ONLY USER TABLE
 # ============================================================
 
 class UserData(models.Model):
@@ -97,9 +99,14 @@ class UserData(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    address = models.CharField(max_length=255,blank = True, null = True)
-    city = models.CharField(max_length=255,blank = True, null = True)
-    state = models.CharField(max_length=255,blank = True, null = True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=255, blank=True, null=True)
+    state = models.CharField(max_length=255, blank=True, null=True)
+
+    last_active = models.DateTimeField(null=True, blank=True)
+    is_typing = models.BooleanField(default=False)
+    # NEW — required for accurate typing indicator
+    typing_with = models.IntegerField(null=True, blank=True)
 
     def set_password(self, raw_password):
         self.password = make_password(raw_password)
@@ -110,6 +117,54 @@ class UserData(models.Model):
 
     def __str__(self):
         return f"{self.email} ({self.provider})"
+
+
+# ============================================================
+# MESSAGE MODELS
+# ============================================================
+
+class Conversation(models.Model):
+    user1 = models.ForeignKey("creator_app.UserData", on_delete=models.CASCADE, related_name="convo_user1")
+    user2 = models.ForeignKey("creator_app.UserData", on_delete=models.CASCADE, related_name="convo_user2")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user1', 'user2')
+
+    def __str__(self):
+        return f"Conversation between {self.user1.email} and {self.user2.email}"
+
+
+class Message(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey("creator_app.UserData", on_delete=models.CASCADE)
+
+    content = models.TextField()
+    is_seen = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # NEW — Reply support
+    reply_to = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="replies"
+    )
+
+    # NEW — File attachment support
+    file = models.FileField(
+        upload_to="message_files/",
+        null=True,
+        blank=True
+    )
+
+    message_type = models.CharField(max_length=20, default="text")
+    seen_at = models.DateTimeField(null=True, blank=True)
+
+
+    def __str__(self):
+        return f"Message from {self.sender.email} at {self.created_at}"
 
 
 # ============================================================
